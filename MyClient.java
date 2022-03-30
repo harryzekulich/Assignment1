@@ -106,3 +106,15 @@ public class MyClient {
                 mostCores = currentCores;
             }
         }
+      }
+        for (int i = 0; i < serversAndInfo.length; i++) {
+            currentServer = serversAndInfo[i].split(" ");
+            int currentCores = Integer.valueOf(currentServer[4]);
+            if (currentCores == mostCores) {
+                return currentServer;
+            }
+        }
+        return currentServer;
+
+    }
+}
