@@ -93,3 +93,16 @@ public class MyClient {
         currentMsg = readMsg(s);
         System.out.println("RCVD: " + currentMsg);
     }
+                    
+                    public static String[] findBiggestServer(String currentMsg) {
+       
+        String[] serversAndInfo = currentMsg.split("\n");
+        int mostCores = 0;
+        String[] currentServer = {""};
+        for (int i = 0; i < serversAndInfo.length; i++) {
+            currentServer = serversAndInfo[i].split(" ");
+            int currentCores = Integer.valueOf(currentServer[4]);
+            if (currentCores > mostCores) {
+                mostCores = currentCores;
+            }
+        }
