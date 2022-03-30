@@ -1,4 +1,4 @@
-iimport java.io.*;
+import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
 
@@ -56,9 +56,15 @@ public class MyClient {
             System.out.println(e);
         }
     }
-    
-    
-     public static synchronized String readMsg(Socket s) {
+
+
+
+
+
+
+
+
+    public static synchronized String readMsg(Socket s) {
         String currentMsg = "FAIL";
         try {
             DataInputStream dis = new DataInputStream(s.getInputStream());
@@ -71,8 +77,16 @@ public class MyClient {
                 dis.read(byteArray);
                
                 currentMsg = new String(byteArray, StandardCharsets.UTF_8);
-                
-                ublic static synchronized void sendMsg(Socket s, String currentMsg) {
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+      
+        return currentMsg;
+    }
+
+
+    public static synchronized void sendMsg(Socket s, String currentMsg) {
         try {
 
             DataOutputStream dout = new DataOutputStream(s.getOutputStream());
@@ -82,7 +96,9 @@ public class MyClient {
         } catch (IOException e) {
             e.printStackTrace();
         }
-                      public static void handshake(Socket s) {
+    }
+
+    public static void handshake(Socket s) {
         String currentMsg = "";
 
      sendMsg(s, "HELO\n");
@@ -93,8 +109,8 @@ public class MyClient {
         currentMsg = readMsg(s);
         System.out.println("RCVD: " + currentMsg);
     }
-                    
-                    public static String[] findBiggestServer(String currentMsg) {
+
+    public static String[] findBiggestServer(String currentMsg) {
        
         String[] serversAndInfo = currentMsg.split("\n");
         int mostCores = 0;
@@ -106,7 +122,6 @@ public class MyClient {
                 mostCores = currentCores;
             }
         }
-      }
         for (int i = 0; i < serversAndInfo.length; i++) {
             currentServer = serversAndInfo[i].split(" ");
             int currentCores = Integer.valueOf(currentServer[4]);
