@@ -108,15 +108,15 @@ public class MyClient {
         String tempMsg = "FAIL";
         try {
             DataInputStream dis = new DataInputStream(s.getInputStream());
-            byte[] byteArray = new byte[dis.available()];
+            byte[] byteArr = new byte[dis.available()];
             //byte array resets, ready for new mmsg
-            byteArray = new byte[0];
-            while (byteArray.length == 0) {
+            byteArr = new byte[0];
+            while (byteArr.length == 0) {
                 //reads stream from server
-                byteArray = new byte[dis.available()];
-                dis.read(byteArray);
+                byteArr = new byte[dis.available()];
+                dis.read(byteArr);
                 //create new string with read bytes
-                tempMsg = new String(byteArray, StandardCharsets.UTF_8);
+                tempMsg = new String(byteArr, StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -132,8 +132,8 @@ public class MyClient {
         try {
             //converts string msg to array which can be sent to server
             DataOutputStream dout = new DataOutputStream(s.getOutputStream());
-            byte[] byteArray = tempMsg.getBytes();
-            dout.write(byteArray);
+            byte[] byteArr = tempMsg.getBytes();
+            dout.write(byteArr);
             dout.flush();
         } catch (IOException e) {
             e.printStackTrace();
