@@ -3,6 +3,21 @@ import java.net.*;
 import java.nio.charset.StandardCharsets;
 
 public class MyClient {
+    
+    
+    
+    
+    private Socket socket = null;
+    private BufferedReader in = null;
+    private DataOutputStream out = null;
+    private DataInputStream din = null;
+    // public Server[] servers;
+    private int largestServerIndex = 0;
+    private String inputString;
+    private Boolean completed = false;
+    
+    
+    
     public static void main(String[] args) {
         try {
             Socket s = new Socket("localhost", 50000); //setting up variables
@@ -140,5 +155,48 @@ public class MyClient {
         }
     }
 
+    
+    public Boolean getsCapable(String string) {           
+
+        String[] server = string.split(" ");
+        
+        if (server[2].equals("active") == false && server[2].equals("booting") == false
+                && server[2].equals("unavailable") == false) {
+            return true;
+        }
+
+        else {
+            return false;
+        }
+
+    }
+    
+    
+    public String getsCapable2(ArrayList<String> array, ArrayList<Integer> numJobs) {
+        ArrayList<String> temp = new ArrayList<String>();
+        ArrayList<Integer> temp1 = new ArrayList<Integer>();
+
+       
+       int min = Collections.min(numJobs);
+       
+
+         for(int i=0;i<array.size();i++){ 
+            String[] split = array.get(i).split(" ");
+            if(Integer.parseInt(split[7]) == min){ 
+                temp1.add(Integer.parseInt(split[4]));
+                temp.add(array.get(i));
+            }
+        }
+        int max = Collections.max(temp1);
+       
+
+          int pos = temp1.lastIndexOf(max);
+
+      
+        
+
+       return temp.get(pos);
+    }
+    
     
 }
