@@ -1,202 +1,217 @@
+
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class MyClient {
-    
-    
-    
-    
-    private Socket socket = null;
-    private BufferedReader in = null;
-    private DataOutputStream out = null;
-    private DataInputStream din = null;
-    // public Server[] servers;
-    private int largestServerIndex = 0;
-    private String inputString;
-    private Boolean completed = false;
-    
-    
-    
+
     public static void main(String[] args) {
+
+
+
+
+        
         try {
-            Socket s = new Socket("localhost", 50000); //setting up variables
-            String[] largestServ = {""};
-            boolean largestGot = false;
-            String tempMsg = "";
+            Socket s = new Socket("localhost", 50000);
+
+            DataInputStream dis = new DataInputStream(s.getInputStream());
+            DataOutputStream dout = new DataOutputStream(s.getOutputStream());
+
+            // Set up variables to be used
+            String[] biggestServer = { "" };
+            boolean biggestFound = false;
+            String currentMsg = "";
             handshake(s);
 
-            //if there are still jobs to be delt with
-            while (!tempMsg.contains("NONE")) {
-                //this message shows that client is ready for servers command, and reads
+            // While there are more jobs to be done
+            while (!currentMsg.contains("NONE")) {
+                // Tells the server that the client is ready for a command and reads it
                 sendMsg(s, "REDY\n");
-                tempMsg = readMsg(s);
-                
-            
-                //new job check
-                if (tempMsg.contains("JOBN")) {
-                    String[] JOBNSplit = tempMsg.split(" ");
-                    //grabs the servers avliable
-                    sendMsg(s, "GETS Avail " + JOBNSplit[4] + " " + JOBNSplit[5] + " " + JOBNSplit[6] + "\n");
-                    //reads message and responds "ok" twice as server needs the response
-                    tempMsg = readMsg(s);
-                    sendMsg(s, "OK\n");
+                currentMsg = dis.readLine();
 
-                    tempMsg = readMsg(s);
-                    sendMsg(s, "OK\n");
+                // Checks to see if the received command is a new job
+                if (currentMsg.contains("JOBN")) {
+                    String[] JOBNSplit = currentMsg.split(" ");
 
-                    //checks largest server
-                    if(largestGot == false){
-                        largestServ = findLargestServ(tempMsg);
-                        largestGot = true;
+                    dout.write(("GETS Capable " + JOBNSplit[4] + " " + JOBNSplit[5] + " " + JOBNSplit[6] + "\n").getBytes());
+                    
+                    currentMsg = dis.readLine();
+                    int serverNum = Integer.parseInt(currentMsg.split(" ")[1]);
+                    dout.write(("OK\n").getBytes());
+
+
+                    ArrayList<String> nameIt = new ArrayList<String>();
+
+                    for(int i=0; i<serverNum; i++){
+                        nameIt.add(dis.readLine());
+                        
                     }
-                    //reads "."
-                    tempMsg = readMsg(s);
 
-                    //schedule job with the largest serv, jobNuM, ServName, ServNum
-                    sendMsg(s, "SCHD " + JOBNSplit[2] + " " + largestServ[0] + " " + largestServ[1] + "\n");
+                    dout.write(("OK\n").getBytes());
+                    dout.write(("SCHD " + JOBNSplit[2] + " " + nameIt.get(0).split(" ")[0] + " " + nameIt.get(0).split(" ")[1] + "\n").getBytes());
+                    
+                   
 
-                    //Reads the next JOB
-                    tempMsg = readMsg(s);
-                    //System.out.println("SCHD: " + tempMsg);
-                }
-                else if (tempMsg.contains("DATA")) {
-                    sendMsg(s, "OK\n");
+
+            //         // Ask what servers are available to run a job with the given data
+            //         sendMsg(s, "GETS Avail " + JOBNSplit[4] + " " + JOBNSplit[5] + " " + JOBNSplit[6] + "\n");
+            //         // Reads the msg saying what data is about to be sent and responds with "OK"
+            //         currentMsg = readMsg(s);
+            //         sendMsg(s, "OK\n");
+
+            //         // Reads the available servers data and responds with "OK"
+            //         currentMsg = readMsg(s);
+            //         sendMsg(s, "OK\n");
+
+            //         // Checks to see if the biggest Server has been found
+            //         // Used as a flag to see that it was found on the first round
+            //         if (biggestFound == false) {
+            //             biggestServer = findBiggestServer(currentMsg);
+            //             biggestFound = true;
+            //         }
+
+            //         // Reads "." from the server
+            //         currentMsg = readMsg(s);
+
+            //         // Schedule the current job to the biggest server (SCHD JobNumber ServerName
+            //         // ServerNumber)
+            //         sendMsg(s, "SCHD " + JOBNSplit[2] + " " + biggestServer[0] + " " + biggestServer[1] + "\n");
+
+            //         // Read the next JOB
+            //         currentMsg = readMsg(s);
+            //         // System.out.println("SCHD: " + currentMsg);
+            //     } else if (currentMsg.contains("DATA")) {
+            //         sendMsg(s, "OK\n");
                 }
             }
-            //once schedulaing has complete, safe quit of socket
-            sendMsg(s, "QUIT\n");
+            // Sends "Quit" to the server to end the session and then closes the socket
+            
+            dout.write(("OK\n").getBytes());
             s.close();
-        } 
-        catch (Exception e) {
+        } catch (Exception e) {
             System.out.println(e);
         }
     }
 
-    public static void handshake(Socket s) {
-        String tempMsg = "";
-
-        //starts handshake
-        sendMsg(s, "HELO\n");
-
-        //checks response
-        tempMsg = readMsg(s);
-        //System.out.println("RCVD: " + tempMsg);
-
-        // responds with AUTH, and ubuntu username e.g harry zekulich
-        sendMsg(s, "AUTH " + System.getProperty("user.name") + "\n");
-
-        //check for OK from server
-        tempMsg = readMsg(s);
-       // System.out.println("RCVD: " + tempMsg);
-    }
-
-     // find largest function
-     public static String[] findLargestServ(String tempMsg) {
-        // servers split into information array
-        String[] information = tempMsg.split("\n");
-        //new variables
-        int mostCores = 0;
-        String[] tempServ = {""};
-        //searches for server with most cores
-        for (int i = 0; i < information.length; i++) {
-            tempServ = information[i].split(" ");
-            int tempCore = Integer.valueOf(tempServ[4]);
-            if (tempCore > mostCores) {
-                mostCores = tempCore;
-            }
-        }
-        //finds that server in array and returns it
-        for (int i = 0; i < information.length; i++) {
-            tempServ = information[i].split(" ");
-            int tempCore = Integer.valueOf(tempServ[4]);
-            if (tempCore == mostCores) {
-                return tempServ;
-            }
-        }
-        return tempServ;
-
-    }
-
     // Function used to read a msg from the server
     public static synchronized String readMsg(Socket s) {
-        String tempMsg = "FAIL";
+        String currentMsg = "FAIL";
         try {
             DataInputStream dis = new DataInputStream(s.getInputStream());
-            byte[] byteArr = new byte[dis.available()];
-            //byte array resets, ready for new mmsg
-            byteArr = new byte[0];
-            while (byteArr.length == 0) {
-                //reads stream from server
-                byteArr = new byte[dis.available()];
-                dis.read(byteArr);
-                //create new string with read bytes
-                tempMsg = new String(byteArr, StandardCharsets.UTF_8);
+            byte[] byteArray = new byte[dis.available()];
+            // Reset byteArray to have 0 elements so it is ready to recieve
+            // a msg and wait until a msg is recieved
+            byteArray = new byte[0];
+            while (byteArray.length == 0) {
+                // Read the bytestream from the server
+                byteArray = new byte[dis.available()];
+                dis.read(byteArray);
+                // Make a string using the recieved bytes and print it
+                currentMsg = new String(byteArray, StandardCharsets.UTF_8);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //Return just recieved msg
-        return tempMsg;
+        // Return the msg just recieved from the server
+        return currentMsg;
     }
 
-       
-
-    // sends message to server function
-    public static synchronized void sendMsg(Socket s, String tempMsg) {
+    // Function used to send a msg to the server
+    public static synchronized void sendMsg(Socket s, String currentMsg) {
         try {
-            //converts string msg to array which can be sent to server
+            // Converts the String msg to an array of bytes and sends them to the server
             DataOutputStream dout = new DataOutputStream(s.getOutputStream());
-            byte[] byteArr = tempMsg.getBytes();
-            dout.write(byteArr);
+            byte[] byteArray = currentMsg.getBytes();
+            dout.write(byteArray);
             dout.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    
-    public Boolean getsCapable(String string) {           
+    public static void handshake(Socket s) {
+        String currentMsg = "";
 
-        String[] server = string.split(" ");
-        
-        if (server[2].equals("active") == false && server[2].equals("booting") == false
-                && server[2].equals("unavailable") == false) {
-            return true;
-        }
+        // Initiate handshake with server
+        //sendMsg(s, "HELO\n");
+        dout.write((s, "HELO\n").getBytes());
 
-        else {
-            return false;
-        }
+        // Check for response from sever for "HELO"
+        currentMsg = readMsg(s);
+        // System.out.println("RCVD: " + currentMsg);
 
+        // Authenticate with a username (ubuntu)
+        sendMsg(s, "AUTH " + System.getProperty("user.name") + "\n");
+
+        // Check to see if sever has ok'd the client's AUTH
+        currentMsg = readMsg(s);
+        // System.out.println("RCVD: " + currentMsg);
     }
-    
-    
-    public String getsCapable2(ArrayList<String> array, ArrayList<Integer> numJobs) {
-        ArrayList<String> temp = new ArrayList<String>();
-        ArrayList<Integer> temp1 = new ArrayList<Integer>();
 
-       
-       int min = Collections.min(numJobs);
-       
-
-         for(int i=0;i<array.size();i++){ 
-            String[] split = array.get(i).split(" ");
-            if(Integer.parseInt(split[7]) == min){ 
-                temp1.add(Integer.parseInt(split[4]));
-                temp.add(array.get(i));
+    // Used to find the biggest server available to run the current job
+    public static String[] findBiggestServer(String currentMsg) {
+        // All the servers in the currentMsg being split into an array
+        String[] serversAndInfo = currentMsg.split("\n");
+        // Sets up variables
+        int mostCores = 0;
+        String[] currentServer = { "" };
+        // Searches for the most cores a server holds in the given available servers
+        for (int i = 0; i < serversAndInfo.length; i++) {
+            currentServer = serversAndInfo[i].split(" ");
+            int currentCores = Integer.valueOf(currentServer[4]);
+            if (currentCores > mostCores) {
+                mostCores = currentCores;
             }
         }
-        int max = Collections.max(temp1);
-       
+        // Finds and returns the biggest server (The one with the most cores)
+        for (int i = 0; i < serversAndInfo.length; i++) {
+            currentServer = serversAndInfo[i].split(" ");
+            int currentCores = Integer.valueOf(currentServer[4]);
+            if (currentCores == mostCores) {
+                return currentServer;
+            }
+        }
+        return currentServer;
 
-          int pos = temp1.lastIndexOf(max);
-
-      
-        
-
-       return temp.get(pos);
     }
-    
-    
+
+    // public Boolean getsCapable(String string) {
+
+    // String[] server = string.split(" ");
+
+    // if (server[2].equals("active") == false && server[2].equals("booting") ==
+    // false
+    // && server[2].equals("unavailable") == false) {
+    // return true;
+    // }
+
+    // else {
+    // return false;
+    // }
+
+    // }
+
+    public String getsCapable2(ArrayList<String> array, ArrayList<Integer> numJobs) {
+        ArrayList<String> temp = new ArrayList<String>();
+        // ArrayList<Integer> temp1 = new ArrayList<Integer>();
+
+        // int min = Collections.min(numJobs);
+
+        for (int i = 0; i < array.size(); i++) {
+            String[] split = array.get(i).split(" ");
+
+            // temp1.add(Integer.parseInt(split[4]));
+            System.out.println("working");
+            temp.add(array.get(i));
+        }
+
+        // int max = Collections.max(temp1);
+
+        // int pos = temp1.lastIndexOf(max);
+
+        return temp.get(1);
+    }
+
 }
