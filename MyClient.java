@@ -99,6 +99,19 @@ public class MyClient {
             System.out.println("ERR: " + i);
         }
     }
+        
+         public String Read() {
+        String text = "";
+        try {
+            text = in.readLine();
+            // System.out.print("RCVD: " + text);
+            inputString = text;
+
+        } catch (IOException i) {
+            System.out.println("ERR: " + i);
+        }
+        return text;
+    }
 
 
     // Function used to read a msg from the server
