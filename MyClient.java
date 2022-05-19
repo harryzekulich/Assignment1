@@ -87,13 +87,19 @@ public class MyClient {
                 }
             }
             // Sends "Quit" to the server to end the session and then closes the socket
-            
-            dout.write(("OK\n").getBytes());
-            s.close();
-        } catch (Exception e) {
-            System.out.println(e);
+        
+    }
+    
+     public void write(String text) {
+        try {
+            out.write((text + "\n").getBytes());
+            // System.out.print("SENT: " + text);
+            out.flush();
+        } catch (IOException i) {
+            System.out.println("ERR: " + i);
         }
     }
+
 
     // Function used to read a msg from the server
     public static synchronized String readMsg(Socket s) {
