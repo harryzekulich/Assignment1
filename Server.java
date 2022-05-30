@@ -1,40 +1,37 @@
 public class Server {
-    String serverType, serverID, state, curStartTime, coreCount, memory, disk;
-    String waitingJobs, runningJobs;
+    String sType, sID, state, cSTime, cCount, mem, disk;
+    String wJobs, runJobs;
 
-    // Split up the server detail message from server into their fields based on the
-    // set format
+    // Spliiting sections up into assigned parts
     public Server(String serverDetail) {
         String[] splitString = serverDetail.split(" ");
 
-        serverType = splitString[0]; // size and name of server
-        serverID = splitString[1]; // Server identifyer
-        state = splitString[2]; // serevr current action
-        curStartTime = splitString[3]; // The last time in the simulation of when the server is now active
-        coreCount = splitString[4]; // The amount of CPU cores present on the server
-        memory = splitString[5]; // The amount of RAM present on the server
-        disk = splitString[6]; // The amount of Disk Storage present on the server
-        waitingJobs = splitString[7]; // The amount of queued jobs present on the server
-        runningJobs = splitString[8]; // The amount of jobs being run present on the server
+        sType = splitString[0]; // type (size/name)
+        sID = splitString[1]; // Server identifyer
+        state = splitString[2]; // server current action
+        cSTime = splitString[3]; // last item of currently running server
+        cCount = splitString[4]; // number of cpu cores
+        mem = splitString[5]; // amount of RAM
+        disk = splitString[6]; // disk storage
+        wJobs = splitString[7]; // number of qeued jobs
+        runJobs = splitString[8]; // amount of running jobs
         
         
     }
+     // waiting jobs as an integer for comparison
+     public int getWaitingJobs() {
+        return Integer.parseInt(wJobs);
+    }
 
-    // return String to be used in the SCHD message, has the serverType and the ID
-    // of it
+    // string for SCHD runnable
     public String getServerTypeID() {
-        return serverType + " " + serverID;
+        return sType + " " + sID;
     }
 
-    // returns the coreCount of the server in the form on an int to be used in
-    // comparsion
+    // core count being returned as a number to be used
     public int getCoreCount() {
-        return Integer.parseInt(coreCount);
+        return Integer.parseInt(cCount);
     }
 
-    // returns the waiting jobs present on the server in the form of an int for
-    // comparision
-    public int getWaitingJobs() {
-        return Integer.parseInt(waitingJobs);
-    }
+
 }
