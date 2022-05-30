@@ -8,68 +8,60 @@ import java.util.ArrayList;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        Socket s = new Socket("localhost", 50000); // Local machine with the port 50000, used to communicate with ds-sim
-        DataInputStream din = new DataInputStream(s.getInputStream()); // Allows receiving of messages from server
-        DataOutputStream dout = new DataOutputStream(s.getOutputStream()); // Allows sending of messages to server
+        Socket s = new Socket("localhost", 50000);
+        DataInputStream din = new DataInputStream(s.getInputStream());
+        DataOutputStream dout = new DataOutputStream(s.getOutputStream());
         
-        // Keeps the messages from the server in the memory buffer to be read in the client later
+        // messages from server to be read
         BufferedReader socketIn = new BufferedReader(new InputStreamReader(din)); 
 
-        // Holds the servers available for job scheduling in an ArrayList
+        //servers avaliable
         ArrayList<Server> serverList = new ArrayList<Server>();
 
-        Job job = null; // Create the Job object, to allow for storage and easy reference to it
-        Scheduler scheduler = new Scheduler(serverList); // Calls the schedule class,
-                                                         // to allow for scheduling of the jobs
+        Job job = null; // ease of access to job
+        Scheduler scheduler = new Scheduler(serverList); //calls scheduler class
 
-        // inString = message from server, outString = message to be sent
-        // state = determine which switch to be in, based on what was sent and received
-        String inString = "", outString = "", state = "Initial";
-        int serverCount = 0; // Holds the number of servers that to be read
-        String algorithm = "ATL"; // Defaults to ATL largest algorithm
-        boolean listUpdated = false; // Allows the Client to know if the ArrayList serverList was updated with the
-                                     // new GETS Capable message
+       
+        String inString = "", outString = "", state = "Initial"; //send, recieve and determine what is needed to be returned
+        int serverCount = 0; //holds serverNum
+        String algorithm = "ATL"; // all to largest algorithm
+        boolean listUpdated = false; // sees if arrayList was updated
 
-        for (int i = 0; i < args.length - 1; i++) { // Check for command line argument for algorithm to use
+        for (int i = 0; i < args.length - 1; i++) { // sees what algo to use
             if (args[i].equals("-a")) { // "-a" was used it means there was an specific algorithm selected
                 algorithm = args[i + 1]; // if command line had "-a", take argument straight after and save it
                 break;
             }
         }
 
-        while (!state.equals("QUIT")) { // Loop used to maintain communication with the server
-            // Make sure that we don't try to read a message from the server 
-            // when we are beginning OR when the message to be SENT is "REDY" and we were in the "Ready" state
+        while (!state.equals("QUIT")) { // keeps communication with the server
             if (!state.equals("Initial") && !(outString.equals("REDY") && state.equals("JobScheduling"))) {
-                inString = socketIn.readLine(); // Read the message sent from the server and save into inString
+                inString = socketIn.readLine(); // reads message from server & saves it
             }
 
-            // Switch used to determine what messages get sent to the server
-            switch (state) {
-                case "Initial": // Send HELO to the server then move on to the AUTH
+            
+            switch (state) {  // determins what gets sent ot the server
+                case "Initial":
                     outString = "HELO";
                     state = "Authorisation";
                     break;
-                case "Authorisation": // Send the AUTH message with the system's username
+                case "Authorisation": // Sends AUTH message with username
                     outString = "AUTH " + System.getProperty("user.name");
                     state = "Ready";
                     break;
 
-                case "Ready": // Sends the REDY message to the server or proceed to quit
-                    if (inString.equals("NONE")) { // If the message sent by the server was NONE,
-                                                   // begin to quit communication
+                case "Ready": //Sends redy to server
+                    if (inString.equals("NONE")) { //quit if no message
                         outString = "QUIT";
                         state = "Quitting";
-                    } else { // If anything else, send REDY and change to Decision to determine what to do
-                             // next based on response
+                    } else { 
                         outString = "REDY";
                         state = "Decision";
                     }
                     break;
 
-                case "Decision": // Determine what to do based on current situtation
-                    // If on new job schedule, prepare to update the server list by send GETS
-                    // message with the job's needs
+                case "Decision": // DEcides what to do based on what has been sent
+              
                     if ((serverCount == 0 || listUpdated == false) && inString.contains("JOBN")) {
                         job = new Job(inString);
                         outString = "GETS Capable " + job.getJobNeeds();
