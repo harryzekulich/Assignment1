@@ -11,19 +11,13 @@ public class Main {
         Socket s = new Socket("localhost", 50000);
         DataInputStream din = new DataInputStream(s.getInputStream());
         DataOutputStream dout = new DataOutputStream(s.getOutputStream());
-        
-        // messages from server to be read
-        BufferedReader socketIn = new BufferedReader(new InputStreamReader(din)); 
-
-        //servers avaliable
-        ArrayList<Server> serverList = new ArrayList<Server>();
-
+        BufferedReader socketIn = new BufferedReader(new InputStreamReader(din));   // messages from server to be read    
+        ArrayList<Server> serverList = new ArrayList<Server>(); //servers avaliable
         Job job = null; // ease of access to job
         Scheduler scheduler = new Scheduler(serverList); //calls scheduler class
-
-       
+  
         String inString = "", outString = "", state = "Initial"; //send, recieve and determine what is needed to be returned
-        int serverCount = 0; //holds serverNum
+        int sCount = 0; //holds serverNum
         String algorithm = "ATL"; // all to largest algorithm
         boolean listUpdated = false; // sees if arrayList was updated
 
@@ -62,121 +56,111 @@ public class Main {
 
                 case "Decision": // DEcides what to do based on what has been sent
               
-                    if ((serverCount == 0 || listUpdated == false) && inString.contains("JOBN")) {
+                    if ((sCount == 0 || listUpdated == false) && inString.contains("JOBN")) {
                         job = new Job(inString);
                         outString = "GETS Capable " + job.getJobNeeds();
                         state = "serverListPrep";
                     }
 
-                    // If serverlist is already updated, proceed to schedule the job to a server
+                    // If list is updated, schedule job
                     if (!serverList.isEmpty() && listUpdated == true) {
                         state = "JobScheduling";
                     }
 
-                    // When no more jobs to schedule, start to quit communication
+                    // no more jobs, quit
                     if (inString.contains("NONE")) {
                         outString = "QUIT";
                         state = "Quitting";
                     }
                     break;
 
-                case "serverListPrep": // Read the DATA message from the server
-                    serverCount = getDataCount(inString); // read the 2nd word of the DATA message and save into
-                                                          // serverCount
+                case "serverListPrep": //Reads DATA message
+                    sCount = getDataCount(inString); //data message gets read and saved
                     outString = "OK";
                     state = "serverListReading";
                     break;
-                case "serverListReading": // Read the serverList generated from GETS capable message
-                    readServerList(inString, serverList, socketIn, serverCount); //
-                    listUpdated = true; // Change to true, to allow the Client to know that the serverList has been
-                                        // updated with servers to be able to handle the job
-                    scheduler = new Scheduler(serverList); // Update scheduler to have the current serverList and
-                                                           // the current job
+                case "serverListReading": // serveLIst gets ready from Gets
+                    readServerList(inString, serverList, socketIn, sCount); //
+                    listUpdated = true; //changed to true after updating
+                    scheduler = new Scheduler(serverList); //update server
                     outString = "OK";
                     state = "Ready";
                     break;
 
                 case "JobScheduling":
-                    // When server sends a job message, save the job into a JOB object
+                    // when a job gets sent, save the job
                     if (inString.contains("JOBN")) {
                         job = new Job(inString);
                     }
 
-                    // Once there are no more jobs, begin to quit
+                    //no jobs, quit
                     if (inString.contains("NONE")) {
                         outString = "QUIT";
                         state = "Quitting";
                         break;
-                    } else if (inString.contains("JCPL")) { // If the message was notification of jobCompletion
-                        if (outString.equals("REDY")) { // Check if we did send a REDY before
-                            break; // In order to not send a duplicate message
+                    } else if (inString.contains("JCPL")) { 
+                        if (outString.equals("REDY")) { // see if REDY was done before
+                            break; 
                         }
                     } else {
-                        outString = "SCHD " + job.jobID + " " + scheduler.schedule(algorithm); // Schedule job with
-                                                                                               // algorithm
-                        state = "Ready"; // Once scheduled, swap back to Ready to send another REDY message to server
+                        outString = "SCHD " + job.jobID + " " + scheduler.schedule(algorithm); // schedule job
+                        state = "Ready"; // in the ready state after scheduled
                     }
-                    listUpdated = false; // Once schedule, swap to false to make the Client to update the list for new
-                                         // servers
+                    listUpdated = false; //after scheduled, make false to update
                     break;
 
-                case "Quitting": // Proceed to start quitting, send a QUIT message to server and end loop
+                case "Quitting": //quit
                     outString = "QUIT";
                     state = "QUIT";
                     break;
 
                 default:
-                    System.out.println("Error has occurred"); // If some coding error made it land here, print this
-                                                              // statement
-                    quitCommunication(din, dout, s); // Close sockets and end communication
+                    System.out.println("Error has occurred"); 
+                    quitCommunication(din, dout, s); // quite communication
             }
 
-            // Send the message to the server, unless we're about to send REDY and we were
-            // in JobScheduling
+            // send server a message, unless REDY
             if (!(outString.equals("REDY") && state.equals("JobScheduling"))) {
-                dout.write((outString + "\n").getBytes()); // Send the message, with a newline character in byte form.
-                                                           // Ensures the server can communicate with the client
+                dout.write((outString + "\n").getBytes()); //send message, make sure server can communicate
             }
         } // End of loop
 
         if (state.equals("QUIT")) {
-            quitCommunication(din, dout, s); // Once we sent the QUIT message, begin to close the connection
+            quitCommunication(din, dout, s); //quit 
         }
     }
-
-    // Read the messages sent by the server when the client requests for the list of servers
-    // with the GETS message
-    private static void readServerList(String inString, ArrayList<Server> serverList, BufferedReader socketIn,
-            int serverCount) throws IOException {
-
-        if (!serverList.isEmpty()) { // If the current serverList is not empty, delete all entries
-            serverList.removeAll(serverList);
-        }
-        Server temp; // Will be used to create a Server object and then be added to the ArrayList serverList
-        for (int i = 0; i < serverCount; i++) { // Loop through messages that list the servers from GETS Capable
-            if (i != 0) { // Ensure we don't skip the first entry of the server list by reading past it
-                inString = socketIn.readLine();
-            }
-            temp = new Server(inString); // Add sever entry with values from the message from the server
-            serverList.add(temp); // Add the server we just made into the ArrayList serverList
-        }
-    }
-
-    // Reads the DATA message to grab how many lines are to be sent to the Client
-    // and save it to be used in another function
+    
+    // reads DATA message to see how many lines are needed
     private static int getDataCount(String inString) {
-        String[] splitString = inString.split(" "); // Cut up the DATA message by adding it to an String Array based on
-                                                    // whitespaces
-        int count = Integer.parseInt(splitString[1]); // Save the 2nd value in the DATA message (DATA N) and converts
-                                                      // String to int
+        String[] splitString = inString.split(" "); // split data message based on white spaces
+        int count = Integer.parseInt(splitString[1]); // saves second value and changes it to int
 
         return count;
     }
 
-    // Closes off the connection with the server
+    //Read message from server, from message
+    private static void readServerList(String inString, ArrayList<Server> serverList, BufferedReader socketIn,
+            int sCount) throws IOException {
+
+        if (!serverList.isEmpty()) { //if list not empty, remove all
+            serverList.removeAll(serverList);
+        }
+        Server temp; //used for server object
+        for (int i = 0; i < sCount; i++) { //loop through servers
+            if (i != 0) { //start at first
+                inString = socketIn.readLine();
+            }
+            temp = new Server(inString); // add server message as an entry
+            serverList.add(temp); // add server to arraylist
+        }
+    }
+
+    
+
+    // quite/remove communication
     private static void quitCommunication(DataInputStream din, DataOutputStream dout, Socket s) throws IOException {
-        din.close(); // Close InputBufferStream
-        dout.close(); // Close OutputBufferStream
-        s.close(); // Close Socket with port 50000 as specified above
+        din.close(); 
+        dout.close(); 
+        s.close(); //
     }
 }
