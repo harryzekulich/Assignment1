@@ -1,20 +1,19 @@
 public class Job {
-    String submitTime, jobID, estRuntime, coreCount, memory, storage;
+    String submitTime, jobID, estRun, cCount, mem, store;
 
-    // Splits the JOBN String into different values based on the set format
+    //splits string into assigned sections
     public Job(String jobString) {
         String[] splitString = jobString.split(" ");
 
-        submitTime = splitString[1]; // When the job was submitted to the client
-        jobID = splitString[2]; // The job identification number, typically a integer
-        estRuntime = splitString[3]; // The predicted amount of time need to complete
-        coreCount = splitString[4]; // How many CPU cores the job will need
-        memory = splitString[5]; // How much RAM the job needs
-        storage = splitString[6]; // How much Disk Storage the job needs
+        submitTime = splitString[1]; //timing of job submission 
+        jobID = splitString[2]; // job id
+        estRun = splitString[3]; // predicted runtime
+        cCount = splitString[4]; //#of cpus
+        mem = splitString[5]; // RAM space
+        store = splitString[6]; // Disk Storage
     }
 
-    // Returns a string to be used in the GETS Capable message to show what the jobs
-    // needs (CPU, RAM, HDD)
+    //returns string for what the job needs
     public String getJobNeeds() {
-        return coreCount + " " + memory + " " + storage;
+        return cCount + " " + mem + " " + store;
     }
